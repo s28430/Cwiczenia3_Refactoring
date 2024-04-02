@@ -2,29 +2,18 @@
 
 namespace LegacyApp
 {
-    public class UserService
+    public class UserService(IUserValidator userValidator)
     {
+        private IUserValidator _userValidator = userValidator;
+
+        [Obsolete("Using default constructor is not desirable. " +
+                  "Please use create user service objects explicitly injecting required dependencies.")]
+        public UserService() : this(new SimpleUserValidator())
+        {
+        }
+
         public bool AddUser(string firstName, string lastName, string email, DateTime dateOfBirth, int clientId)
         {
-            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName))
-            {
-                return false;
-            }
-
-            if (!email.Contains("@") && !email.Contains("."))
-            {
-                return false;
-            }
-
-            var now = DateTime.Now;
-            int age = now.Year - dateOfBirth.Year;
-            if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day)) age--;
-
-            if (age < 21)
-            {
-                return false;
-            }
-
             var clientRepository = new ClientRepository();
             var client = clientRepository.GetById(clientId);
 
@@ -36,6 +25,8 @@ namespace LegacyApp
                 FirstName = firstName,
                 LastName = lastName
             };
+
+            if (!_userValidator.ValidateUser(user)) return false;
 
             if (client.Type == "VeryImportantClient")
             {
