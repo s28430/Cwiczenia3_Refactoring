@@ -2,13 +2,11 @@
 
 namespace LegacyApp
 {
-    public class UserService(IUserValidator userValidator)
+    public class UserService(IUserValidator userValidator, IUserCreditService creditService)
     {
-        private IUserValidator _userValidator = userValidator;
-
         [Obsolete("Using default constructor is not desirable. " +
                   "Please use create user service objects explicitly injecting required dependencies.")]
-        public UserService() : this(new SimpleUserValidator())
+        public UserService() : this(new SimpleUserValidator(), new UserCreditService())
         {
         }
 
@@ -26,35 +24,38 @@ namespace LegacyApp
                 LastName = lastName
             };
 
-            if (!_userValidator.ValidateUser(user)) return false;
+            if (!userValidator.ValidateUser(user)) return false;
 
-            if (client.Type == "VeryImportantClient")
+            switch (client.Type)
             {
-                user.HasCreditLimit = false;
-            }
-            else if (client.Type == "ImportantClient")
-            {
-                using (var userCreditService = new UserCreditService())
+                case "VeryImportantClient":
+                    user.HasCreditLimit = false;
+                    break;
+                case "ImportantClient":
                 {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    creditLimit = creditLimit * 2;
-                    user.CreditLimit = creditLimit;
+                    using (var userCreditService = creditService)
+                    {
+                        var creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
+                        creditLimit *= 2;
+                        user.CreditLimit = creditLimit;
+                    }
+
+                    break;
+                }
+                default:
+                {
+                    user.HasCreditLimit = true;
+                    using (var userCreditService = creditService)
+                    {
+                        var creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
+                        user.CreditLimit = creditLimit;
+                    }
+
+                    break;
                 }
             }
-            else
-            {
-                user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    user.CreditLimit = creditLimit;
-                }
-            }
 
-            if (user.HasCreditLimit && user.CreditLimit < 500)
-            {
-                return false;
-            }
+            if (user.HasCreditLimit && user.CreditLimit < 500) return false;
 
             UserDataAccess.AddUser(user);
             return true;
