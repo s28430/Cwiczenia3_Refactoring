@@ -28,10 +28,10 @@ namespace LegacyApp
 
             switch (client.Type)
             {
-                case "VeryImportantClient":
+                case ClientType.VeryImportantClient:
                     user.HasCreditLimit = false;
                     break;
-                case "ImportantClient":
+                case ClientType.ImportantClient:
                 {
                     using (var userCreditService = creditService)
                     {
