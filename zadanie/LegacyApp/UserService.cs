@@ -1,18 +1,18 @@
 ﻿using System;
+using LegacyApp.Interfaces;
 
 namespace LegacyApp
 {
-    public class UserService(IUserValidator userValidator, IUserCreditService creditService)
+    public class UserService(IUserValidator userValidator, IUserCreditService creditService,
+        IClientRepository clientRepository)
     {
         [Obsolete("Using default constructor is not desirable. " +
                   "Please use create user service objects explicitly injecting required dependencies.")]
-        public UserService() : this(new SimpleUserValidator(), new UserCreditService())
-        {
-        }
+        public UserService() : this(new SimpleUserValidator(), new UserCreditService(), new ClientRepository())
+        {}
 
         public bool AddUser(string firstName, string lastName, string email, DateTime dateOfBirth, int clientId)
         {
-            var clientRepository = new ClientRepository();
             var client = clientRepository.GetById(clientId);
 
             var user = new User
