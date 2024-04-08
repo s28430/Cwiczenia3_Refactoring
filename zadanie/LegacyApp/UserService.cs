@@ -7,7 +7,7 @@ namespace LegacyApp
         IClientRepository clientRepository)
     {
         [Obsolete("Using default constructor is not desirable. " +
-                  "Please use create user service objects explicitly injecting required dependencies.")]
+                  "Please create user service objects by explicitly injecting required dependencies.")]
         public UserService() : this(new SimpleUserValidator(), new UserCreditService(), new ClientRepository())
         {}
 
